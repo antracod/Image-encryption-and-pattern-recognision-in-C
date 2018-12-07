@@ -33,6 +33,7 @@ void grayscale_image(char* nume_fisier_sursa,char* nume_fisier_destinatie)
 	while(fread(&c,1,1,fin)==1)
 	{
 		fwrite(&c,1,1,fout);
+		fflush(fout);
 	}
 	fclose(fin);
 
@@ -71,10 +72,6 @@ void grayscale_image(char* nume_fisier_sursa,char* nume_fisier_destinatie)
 }
 
 
-
-
-
-
 ///Generam numere PseudoRandom cu XORSHIFT
 uint32_t xorshift32(unsigned int seed)
 {
@@ -90,14 +87,7 @@ int main()
 	char nume_img_grayscale[] = "result_grayscale.bmp";
 	char nume_img_ecrypter[] = "result_ecrypted.bmp";
  	grayscale_image(nume_img_sursa, nume_img_grayscale);
-
-    for(int i=1;i<=10;i++)
-    {
-        unsigned int p;
-        p=xorshift32(i);
-        printf("PSEUDOKEY TEST: %d \n\n",p);
-    }
-
+	
 
 	return 0;
 }
