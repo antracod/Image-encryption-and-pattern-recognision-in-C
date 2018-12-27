@@ -82,25 +82,31 @@ unsigned char *getheader(char *nume_img_sursa)
     return hdr;
 }
 
-unsigned char *reverse_array(unsigned char *data)
+void reverse_array(unsigned char *data)
 {
     unsigned char *info;
     info = getheader("peppers.bmp");
     int latime_img = *(int*)&info[18];
     int inaltime_img = *(int*)&info[22];
-    int padding,k;
+    int padding;
 
+    unsigned char *data2 =  malloc(sizeof(unsigned char)*inaltime_img*latime_img*3+100);
     if(latime_img % 4 != 0) /// Aflu padding-ul
         padding = 4 - (3 * latime_img) % 4;
     else
         padding = 0;
 
-     for(int i=54;i<latime_img*inaltime_img+inaltime_img*padding-padding;i++)
+    int linie=(latime_img*3+padding);
+    for(int j=0; j<inaltime_img/2; j++)
     {
-        data[i]=data[i+1];
-    }
-    return data;
+        for(int i=0; i<linie; i++)
+        {
+            unsigned char tmp = data[54+j*linie+i];
+            data[54+j*linie+i] = data[54+(inaltime_img-j-1)*linie+i];
+            data[54+(inaltime_img-j-1)*linie+i] = tmp;
 
+        }
+    }
 }
 
 int main()
@@ -120,13 +126,9 @@ int main()
 
     data = ReadBMP(nume_img_sursa);
 
- //   data = reverse_array(data);
+    reverse_array(data);
 
     WriteBMP(nume_img_criptata,data);
-
-
-
-
 
     return 0;
 }
