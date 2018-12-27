@@ -98,36 +98,58 @@ int main()
     info = getheader(nume_img_sursa);
     int width = *(int*)&info[18];
     int height = *(int*)&info[22];
-
+    int area = width*height;
     unsigned char *a;
     a =  malloc(sizeof(unsigned char)*width*height*3+55);
 
     a = ReadBMP(nume_img_sursa);
+    switchpixels(a,0,1);
+
+    for(int i=0;i<area/2;i++)
+     {
+         a = switchpixels(a,i,area-i);
+     }
+
 
     unsigned long int *r;
-    int area = width*height;
-    r = malloc(sizeof(unsigned long)*2*area);
+
+
+    r = malloc(sizeof(unsigned long)*3*area);
     r[0]=123456789;
-    for(int i=1;i<area*2;i++)
+    for(int i=1;i<=area*3;i++)
     {
         r[i]=xorshift32(r[i-1]);
     }
 
      int i, j, tmp;
       unsigned long int *rp;
-     rp = malloc(sizeof(unsigned long)*2*area);
 
-     for(int i=0;i<=area;i++)
-     {
-         rp[i]=i;
-     }
 
-     for (i = area - 1; i > 0; i--) {
+     for (i = area; i > 0; i--) {
          j = r[area-1-i] % (i + 1);
          a = switchpixels(a,i,j);
      }
+      WriteBMP(nume_img_criptata,a);
+    unsigned long int sv = 987654321;
 
-    WriteBMP(nume_img_criptata,a);
+     a[54] = sv^a[54]^r[area];
+     a[55] = sv^a[55]^r[area];
+     a[56] = sv^a[56]^r[area];
+
+     for(i = 57;i<=area*3+56;i=i+3)
+     {
+         if(i%8000==0)
+            printf("%d ",i);
+        a[i]=a[i-3]^a[i]^r[area+1+(i-57)/3];
+        a[i+1]=a[i-2]^a[i+1]^r[area+(i-57)/3];
+        a[i+2]=a[i-1]^a[i+2]^r[area+(i-57)/3];
+     }
+     for(int i=0;i<area/2;i++)
+     {
+         a = switchpixels(a,i,area-i);
+     }
+
+   // WriteBMP(nume_img_criptata,a);
 
     return 0;
 }
