@@ -20,7 +20,7 @@ unsigned char* ReadBMP(char* nume_fisier_intrare)
     int width = *(int*)&info[18];
     int height = *(int*)&info[22];
 
-    int row_padded = (width*3 + 3) & (~3);
+      int row_padded = (width*3 + 3) & (~3);
     unsigned char* data = malloc(sizeof(unsigned char)*row_padded);
     unsigned char* data2 = malloc(sizeof(unsigned char)*row_padded*height+54);
 
@@ -37,9 +37,14 @@ unsigned char* ReadBMP(char* nume_fisier_intrare)
         for(int j = 0; j < width*3; j += 3)
         {
             data2[k++]=data[j];
+            printf("R: %d ",data2[k-1]);
             data2[k++]=data[j+1];
+            printf("R: %d",data2[k-1]);
             data2[k++]=data[j+2];
+            printf("R: %d",data2[k-1]);
+
         }
+        printf("\n");
     }
 
     fclose(fin);
@@ -53,13 +58,14 @@ void WriteBMP(char *nume_fisier_iesire,unsigned char *a)
 
     int width = *(int*)&a[18];
     int height = *(int*)&a[22];
-
-    int psize = width*height*3+54;
+     int row_padded = (width*3 + 3) & (~3);
+    int psize = height*row_padded+54;
 
     for(int i=0; i<psize; i++)
     {
         fwrite(&a[i], 1, 1, fout);
-        fflush(fout);
+
+      //  fflush(fout);
     }
 }
 
@@ -100,9 +106,13 @@ int main()
     int height = *(int*)&info[22];
     int area = width*height;
     unsigned char *a;
-    a =  malloc(sizeof(unsigned char)*width*height*3+55);
+    a =  malloc(sizeof(unsigned char)*width*height*4+55);
 
     a = ReadBMP(nume_img_sursa);
+
+    WriteBMP(nume_img_criptata,a);
+
+
     switchpixels(a,0,1);
 
     for(int i=0;i<area/2;i++)
@@ -129,7 +139,9 @@ int main()
          j = r[area-1-i] % (i + 1);
          a = switchpixels(a,i,j);
      }
-      WriteBMP(nume_img_criptata,a);
+
+
+
     unsigned long int sv = 987654321;
 
      a[54] = sv^a[54]^r[area];
