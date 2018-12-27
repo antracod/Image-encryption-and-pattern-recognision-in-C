@@ -13,60 +13,64 @@ unsigned char* ReadBMP(char* nume_fisier_intrare)
 {
     FILE* fin = fopen(nume_fisier_intrare, "rb");
 
-    unsigned char info[54];
+    int k=0;
+    unsigned int dim_img, latime_img, inaltime_img;
+    unsigned char pRGB[3],c;
 
-    fread(info, sizeof(unsigned char), 54, fin);
+    fseek(fin, 18, SEEK_SET);
+    fread(&latime_img, sizeof(unsigned int), 1, fin);
+    fread(&inaltime_img, sizeof(unsigned int), 1, fin);
+    fseek(fin,0,SEEK_SET);
 
-    int width = *(int*)&info[18];
-    int height = *(int*)&info[22];
+    unsigned char* data = malloc(sizeof(unsigned char)*inaltime_img*latime_img*3+100);
 
-      int row_padded = (width*3 + 3) & (~3);
-    unsigned char* data = malloc(sizeof(unsigned char)*row_padded);
-    unsigned char* data2 = malloc(sizeof(unsigned char)*row_padded*height+54);
-
-    for(int i= 0 ; i < 54 ; i++)
+    while(fread(&c,1,1,fin)==1)
     {
-        data2[i] = info[i];
-    }
-
-    int k=54;
-
-    for(int i = 0; i < height; i++)
-    {
-        fread(data, sizeof(unsigned char), row_padded, fin);
-        for(int j = 0; j < width*3; j += 3)
-        {
-            data2[k++]=data[j];
-            printf("R: %d ",data2[k-1]);
-            data2[k++]=data[j+1];
-            printf("R: %d",data2[k-1]);
-            data2[k++]=data[j+2];
-            printf("R: %d",data2[k-1]);
-
-        }
-        printf("\n");
+        data[k++]=c;
     }
 
     fclose(fin);
-    return data2;
+    return data;
 }
 
-void WriteBMP(char *nume_fisier_iesire,unsigned char *a)
+void WriteBMP(char *nume_fisier_iesire,unsigned char *data)
 {
-    FILE *fout;
+    FILE *fout; /// Fisiere
     fout = fopen(nume_fisier_iesire,"wb+");
 
-    int width = *(int*)&a[18];
-    int height = *(int*)&a[22];
-     int row_padded = (width*3 + 3) & (~3);
-    int psize = height*row_padded+54;
+    int padding,k; /// Declarari
+    int latime_img = *(int*)&data[18];
+    int inaltime_img = *(int*)&data[22];
+    unsigned char pRGB[3];
 
-    for(int i=0; i<psize; i++)
+    if(latime_img % 4 != 0) /// Aflu padding-ul
+        padding = 4 - (3 * latime_img) % 4;
+    else
+        padding = 0;
+
+    for(k=0; k<54; k++) /// Scriu header-ul
     {
-        fwrite(&a[i], 1, 1, fout);
-
-      //  fflush(fout);
+        fwrite(&data[k],1,1,fout);
     }
+
+    for(int i = 0; i < inaltime_img; i++)
+    {
+        for(int j = 0; j < latime_img; j++) /// Scriu pixel cu pixel
+        {
+            pRGB[0] = data[k++];
+            pRGB[1] = data[k++];
+            pRGB[2] = data[k++];
+            fwrite(pRGB, 3, 1, fout);
+            fflush(fout);
+        }
+        for(int s=1; s<=padding; s++) /// Scriu padding-ul
+        {
+            fwrite(&data[k], 1, 1, fout);
+            fflush(fout);
+            k++;
+        }
+    }
+    fclose(fout);
 }
 
 unsigned char *getheader(char *nume_img_sursa)
@@ -78,20 +82,25 @@ unsigned char *getheader(char *nume_img_sursa)
     return hdr;
 }
 
-unsigned char *switchpixels(unsigned char *a,int i,int j)
+unsigned char *reverse_array(unsigned char *data)
 {
-    unsigned char *p = a;
-    unsigned char tmp1,tmp2,tmp3;
-    tmp1 = p[i*3+54];
-    tmp2 = p[i*3+55];
-    tmp3 = p[i*3+56];
-    p[i*3+54] = p[j*3+54];
-    p[i*3+55] = p[j*3+55];
-    p[i*3+56] = p[j*3+56];
-    p[j*3+54] = tmp1;
-    p[j*3+55] = tmp2;
-    p[j*3+56] = tmp3;
-    return p;
+    unsigned char *info;
+    info = getheader("peppers.bmp");
+    int latime_img = *(int*)&info[18];
+    int inaltime_img = *(int*)&info[22];
+    int padding,k;
+
+    if(latime_img % 4 != 0) /// Aflu padding-ul
+        padding = 4 - (3 * latime_img) % 4;
+    else
+        padding = 0;
+
+     for(int i=54;i<latime_img*inaltime_img+inaltime_img*padding-padding;i++)
+    {
+        data[i]=data[i+1];
+    }
+    return data;
+
 }
 
 int main()
@@ -102,66 +111,22 @@ int main()
 
     unsigned char *info;
     info = getheader(nume_img_sursa);
-    int width = *(int*)&info[18];
-    int height = *(int*)&info[22];
-    int area = width*height;
-    unsigned char *a;
-    a =  malloc(sizeof(unsigned char)*width*height*4+55);
+    int latime_img = *(int*)&info[18];
+    int inaltime_img = *(int*)&info[22];
+    int area = latime_img*inaltime_img;
+    unsigned char *data;
 
-    a = ReadBMP(nume_img_sursa);
+    data =  malloc(sizeof(unsigned char)*inaltime_img*latime_img*3+100);
 
-    WriteBMP(nume_img_criptata,a);
+    data = ReadBMP(nume_img_sursa);
 
+ //   data = reverse_array(data);
 
-    switchpixels(a,0,1);
-
-    for(int i=0;i<area/2;i++)
-     {
-         a = switchpixels(a,i,area-i);
-     }
-
-
-    unsigned long int *r;
-
-
-    r = malloc(sizeof(unsigned long)*3*area);
-    r[0]=123456789;
-    for(int i=1;i<=area*3;i++)
-    {
-        r[i]=xorshift32(r[i-1]);
-    }
-
-     int i, j, tmp;
-      unsigned long int *rp;
-
-
-     for (i = area; i > 0; i--) {
-         j = r[area-1-i] % (i + 1);
-         a = switchpixels(a,i,j);
-     }
+    WriteBMP(nume_img_criptata,data);
 
 
 
-    unsigned long int sv = 987654321;
 
-     a[54] = sv^a[54]^r[area];
-     a[55] = sv^a[55]^r[area];
-     a[56] = sv^a[56]^r[area];
-
-     for(i = 57;i<=area*3+56;i=i+3)
-     {
-         if(i%8000==0)
-            printf("%d ",i);
-        a[i]=a[i-3]^a[i]^r[area+1+(i-57)/3];
-        a[i+1]=a[i-2]^a[i+1]^r[area+(i-57)/3];
-        a[i+2]=a[i-1]^a[i+2]^r[area+(i-57)/3];
-     }
-     for(int i=0;i<area/2;i++)
-     {
-         a = switchpixels(a,i,area-i);
-     }
-
-   // WriteBMP(nume_img_criptata,a);
 
     return 0;
 }
