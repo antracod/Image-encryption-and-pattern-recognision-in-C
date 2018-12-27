@@ -9,7 +9,7 @@ unsigned long int xorshift32(unsigned long int seed)
     return seed;
 }
 
-unsigned char* ReadBMP(char* nume_fisier_intrare)
+void ReadBMP(char* nume_fisier_intrare,unsigned char *data)
 {
     FILE* fin = fopen(nume_fisier_intrare, "rb");
 
@@ -22,15 +22,12 @@ unsigned char* ReadBMP(char* nume_fisier_intrare)
     fread(&inaltime_img, sizeof(unsigned int), 1, fin);
     fseek(fin,0,SEEK_SET);
 
-    unsigned char* data = malloc(sizeof(unsigned char)*inaltime_img*latime_img*3+100);
-
     while(fread(&c,1,1,fin)==1)
     {
         data[k++]=c;
     }
 
     fclose(fin);
-    return data;
 }
 
 void WriteBMP(char *nume_fisier_iesire,unsigned char *data)
@@ -82,21 +79,20 @@ unsigned char *getheader(char *nume_img_sursa)
     return hdr;
 }
 
-void reverse_array(unsigned char *data)
+void reverse_array(unsigned char *data,unsigned char *header)
 {
-    unsigned char *info;
-    info = getheader("peppers.bmp");
-    int latime_img = *(int*)&info[18];
-    int inaltime_img = *(int*)&info[22];
+
+    int latime_img = *(int*)&header[18];
+    int inaltime_img = *(int*)&header[22];
     int padding;
 
-    unsigned char *data2 =  malloc(sizeof(unsigned char)*inaltime_img*latime_img*3+100);
     if(latime_img % 4 != 0) /// Aflu padding-ul
         padding = 4 - (3 * latime_img) % 4;
     else
         padding = 0;
 
     int linie=(latime_img*3+padding);
+
     for(int j=0; j<inaltime_img/2; j++)
     {
         for(int i=0; i<linie; i++)
@@ -104,8 +100,31 @@ void reverse_array(unsigned char *data)
             unsigned char tmp = data[54+j*linie+i];
             data[54+j*linie+i] = data[54+(inaltime_img-j-1)*linie+i];
             data[54+(inaltime_img-j-1)*linie+i] = tmp;
-
         }
+    }
+}
+
+void genrnd_array(unsigned long *rnd,int n,unsigned long int seed)
+{
+    rnd[0]=seed;
+
+    for(int i=1;i<=n;i++)
+    {
+        rnd[i]=xorshift32(rnd[i-1]);
+    }
+}
+
+void genperm_array(unsigned long *perm,unsigned long *rng,int n)
+{
+    unsigned int k,temp;
+    for(k=0;k<=n;k++)
+    {
+        perm[k]=k;
+    }
+    for(int k=n-1;k>0;k--)
+    {
+        local_rng = rng[k];
+
     }
 }
 
@@ -115,18 +134,27 @@ int main()
     char nume_img_criptata[] = "peppers_criptata.bmp";
     char nume_img_ecrypter[] = "peppers_ecrypted.bmp";
 
-    unsigned char *info;
-    info = getheader(nume_img_sursa);
-    int latime_img = *(int*)&info[18];
-    int inaltime_img = *(int*)&info[22];
+    unsigned char *header;
+    header = getheader(nume_img_sursa);
+    int latime_img = *(int*)&header[18];
+    int inaltime_img = *(int*)&header[22];
     int area = latime_img*inaltime_img;
+
     unsigned char *data;
+    unsigned long int *rnd;
+    unsigned long int *perm;
 
     data =  malloc(sizeof(unsigned char)*inaltime_img*latime_img*3+100);
+    rnd = malloc(sizeof(unsigned long int)*inaltime_img*latime_img*2+2);
+    perm = malloc(sizeof(unsigned long int)*inaltime_img*latime_img*2+2);
 
-    data = ReadBMP(nume_img_sursa);
+    ReadBMP(nume_img_sursa,data);
 
-    reverse_array(data);
+    reverse_array(data,header);
+
+    genrnd_array(rnd,inaltime_img*latime_img*2,123456789);
+
+    genperm_array(perm,rnd,inaltime_img*latime_img);
 
     WriteBMP(nume_img_criptata,data);
 
