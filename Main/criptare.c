@@ -121,20 +121,20 @@ void genperm_array(unsigned long *perm,unsigned long *rng,int n)
     {
         perm[k]=k;
     }
-    for(int k=n-1;k>0;k--)
+    for(int k=n-1;k>=1;k--)
     {
-        unsigned long local_rng = rng[k]%(k+1);
+        unsigned long local_rng = rng[n-k]%(k+1);
         temp = perm[k];
         perm[k] = perm[local_rng];
         perm[local_rng] = temp;
     }
     for(k=0;k<=n;k++)
     {
-        printf("%lu e schimbat cu %lu \n",k,perm[k]);
+     //  printf("%lu e schimbat cu %lu \n",k,perm[k]);
     }
 }
 
-void switch_pixels(unsigned char *data,unsigned char *data2,unsigned x,unsigned y,unsigned latime_img,unsigned padding)
+void switch_pixels(unsigned char *data,unsigned x,unsigned y,unsigned latime_img,unsigned padding)
 {
     x=(x-1)*3+(x/latime_img)*padding+54;
     y=(y-1)*3+(y/latime_img)*padding+54;
@@ -149,17 +149,32 @@ void switch_pixels(unsigned char *data,unsigned char *data2,unsigned x,unsigned 
     data[y+2] = temp3;
 }
 
-void transfer_pixel()
+void transfer_pixels(unsigned char *data,unsigned char *data2,unsigned x,unsigned y,unsigned latime_img,unsigned padding)
 {
+    x=(x-1)*3+(x/latime_img)*padding+54;
+    y=(y-1)*3+(y/latime_img)*padding+54;
 
+    data2[y] = data[x];
+    data2[y+1] = data[x+1];
+    data2[y+2] = data[x+2];
 }
-unsigned char *apply_perm(unsigned char *data,unsigned long int *perm,unsigned int n)
+
+unsigned char *apply_perm(unsigned char *data,unsigned long int *perm,unsigned int n,unsigned int latime_img)
 {
     unsigned char *data2;
-    data2 =  malloc(sizeof(unsigned char)*25*3+100);
-    for(int i=1;i<=n;i++)
+    data2 =  malloc(sizeof(unsigned char)*latime_img*latime_img*3+100);
+    for(int i=0;i<=54+3*latime_img*latime_img+5;i++)
     {
-        switch_pixels(data,i,n-i+1,25,1);
+        unsigned char tmp;
+        tmp = data[i];
+        data2[i]=tmp;
+    }
+    for(int i=0;i<=n-1;i++)
+    {
+        unsigned long int j=perm[i];
+        transfer_pixels(data,data2,i+1,j+1,latime_img,1);
+       // printf("%lu schimbat cu %lu \n",i+1,j+1);
+
     }
     return data2;
 }
@@ -192,9 +207,9 @@ int main()
 
     genperm_array(perm,rnd,inaltime_img*latime_img);
 
-    switch_pixels(data,1,2,latime_img,1);
+    //switch_pixels(data,1,2,latime_img,1);
 
-    apply_perm(data,perm,inaltime_img*latime_img);
+    data = apply_perm(data,perm,inaltime_img*latime_img,latime_img);
 
     WriteBMP(nume_img_criptata,data);
 
