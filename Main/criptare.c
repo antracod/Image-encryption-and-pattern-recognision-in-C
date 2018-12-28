@@ -116,16 +116,52 @@ void genrnd_array(unsigned long *rnd,int n,unsigned long int seed)
 
 void genperm_array(unsigned long *perm,unsigned long *rng,int n)
 {
-    unsigned int k,temp;
+    unsigned long int k,temp;
     for(k=0;k<=n;k++)
     {
         perm[k]=k;
     }
     for(int k=n-1;k>0;k--)
     {
-        local_rng = rng[k];
-
+        unsigned long local_rng = rng[k]%(k+1);
+        temp = perm[k];
+        perm[k] = perm[local_rng];
+        perm[local_rng] = temp;
     }
+    for(k=0;k<=n;k++)
+    {
+        printf("%lu e schimbat cu %lu \n",k,perm[k]);
+    }
+}
+
+void switch_pixels(unsigned char *data,unsigned char *data2,unsigned x,unsigned y,unsigned latime_img,unsigned padding)
+{
+    x=(x-1)*3+(x/latime_img)*padding+54;
+    y=(y-1)*3+(y/latime_img)*padding+54;
+    unsigned char temp1 = data[x];
+    unsigned char temp2 = data[x+1];
+    unsigned char temp3 = data[x+2];
+    data[x] = data[y];
+    data[x+1] = data[y+1];
+    data[x+2] = data[y+2];
+    data[y] = temp1;
+    data[y+1] = temp2;
+    data[y+2] = temp3;
+}
+
+void transfer_pixel()
+{
+
+}
+unsigned char *apply_perm(unsigned char *data,unsigned long int *perm,unsigned int n)
+{
+    unsigned char *data2;
+    data2 =  malloc(sizeof(unsigned char)*25*3+100);
+    for(int i=1;i<=n;i++)
+    {
+        switch_pixels(data,i,n-i+1,25,1);
+    }
+    return data2;
 }
 
 int main()
@@ -155,6 +191,10 @@ int main()
     genrnd_array(rnd,inaltime_img*latime_img*2,123456789);
 
     genperm_array(perm,rnd,inaltime_img*latime_img);
+
+    switch_pixels(data,1,2,latime_img,1);
+
+    apply_perm(data,perm,inaltime_img*latime_img);
 
     WriteBMP(nume_img_criptata,data);
 
