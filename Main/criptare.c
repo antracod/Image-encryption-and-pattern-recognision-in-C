@@ -151,8 +151,8 @@ void switch_pixels(unsigned char *data,unsigned x,unsigned y,unsigned latime_img
 
 void transfer_pixels(unsigned char *data,unsigned char *data2,unsigned x,unsigned y,unsigned latime_img,unsigned padding)
 {
-    x=(x-1)*3+(x/latime_img)*padding+54;
-    y=(y-1)*3+(y/latime_img)*padding+54;
+    x=(x-1)*3+((x-1)/latime_img)*padding+54;
+    y=(y-1)*3+((y-1)/latime_img)*padding+54;
 
     data2[y] = data[x];
     data2[y+1] = data[x+1];
@@ -172,7 +172,7 @@ unsigned char *apply_perm(unsigned char *data,unsigned long int *perm,unsigned i
     for(int i=0;i<=n-1;i++)
     {
         unsigned long int j=perm[i];
-        transfer_pixels(data,data2,i+1,j+1,latime_img,1);
+        transfer_pixels(data,data2,i+1,j+1,latime_img,0);
        // printf("%lu schimbat cu %lu \n",i+1,j+1);
 
     }
@@ -210,7 +210,7 @@ int main()
     //switch_pixels(data,1,2,latime_img,1);
 
     data = apply_perm(data,perm,inaltime_img*latime_img,latime_img);
-
+    reverse_array(data,header);
     WriteBMP(nume_img_criptata,data);
 
     return 0;
