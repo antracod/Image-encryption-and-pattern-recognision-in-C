@@ -222,12 +222,46 @@ void xor_substitution(unsigned char *data,unsigned long sv,unsigned latime_img,u
     }
 }
 
+void decrypt_image(char *nume_img_sursa,char *nume_img_decrypted)
+{
+     unsigned char *header;
+    header = getheader(nume_img_sursa);
+    int latime_img = *(int*)&header[18];
+    int inaltime_img = *(int*)&header[22];
+    int area = latime_img*inaltime_img;
+
+    unsigned char *data;
+    unsigned long int *rnd;
+    unsigned long int *perm;
+
+    data =  malloc(sizeof(unsigned char)*inaltime_img*latime_img*3+100);
+    rnd = malloc(sizeof(unsigned long int)*inaltime_img*latime_img*2+2);
+    perm = malloc(sizeof(unsigned long int)*inaltime_img*latime_img*2+2);
+    perm_inv = malloc(sizeof(unsigned long int)*inaltime_img*latime_img*2+2);
+    ReadBMP(nume_img_sursa,data);
+
+    reverse_array(data,header);
+
+    genrnd_array(rnd,inaltime_img*latime_img*2,123456789);
+
+    genperm_array(perm,rnd,inaltime_img*latime_img);
+
+    geninvperm_array(perm);
+   // data = apply_perm(data,perm,inaltime_img*latime_img,latime_img);
+
+   // xor_substitution(data,987654321,latime_img,rnd);
+
+   // reverse_array(data,header);
+
+    WriteBMP(nume_img_decrypted,data);
+
+}
 
 int main()
 {
     char nume_img_sursa[] = "peppers.bmp";
     char nume_img_criptata[] = "peppers_criptata.bmp";
-    char nume_img_decriptata[] = "peppers_ecrypted.bmp";
+    char nume_img_decriptata[] = "peppers_decrypted.bmp";
 
 
     /// Criptare
@@ -263,6 +297,8 @@ int main()
     WriteBMP(nume_img_criptata,data);
 
     /// Decriptare
+
+    decrypt_image(nume_img_criptata,nume_img_decriptata);
 
 
 
