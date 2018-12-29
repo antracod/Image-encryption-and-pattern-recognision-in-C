@@ -283,7 +283,6 @@ void geninvperm_array(unsigned long *perm,unsigned long *invperm,int n)
     }
 }
 
-
 void encrypt_image(char *nume_img_sursa,char *nume_img_criptata)
 {
     unsigned char *header;
@@ -317,6 +316,7 @@ void encrypt_image(char *nume_img_sursa,char *nume_img_criptata)
     WriteBMP(nume_img_criptata,data);
 
 }
+
 void decrypt_image(char *nume_img_sursa,char *nume_img_decrypted)
 {
     unsigned char *header;
@@ -355,6 +355,48 @@ void decrypt_image(char *nume_img_sursa,char *nume_img_decrypted)
 }
 
 
+void chi_test(char *nume_img_sursa)
+{
+    unsigned char *header;
+    header = getheader(nume_img_sursa);
+    int latime_img = *(int*)&header[18];
+    int inaltime_img = *(int*)&header[22];
+
+    unsigned char *data;
+    data =  malloc(sizeof(unsigned char)*inaltime_img*latime_img*3+100);
+
+    ReadBMP(nume_img_sursa,data);
+
+    int k=54;
+    double pR=0,pG=0,pB=0;
+    int fvR[257],fvG[257],fvB[257];
+    double f_sub = (latime_img*inaltime_img)/256;
+
+
+    for(int i=0;i<=256;i++)
+    {
+        fvR[i] = fvG[i] = fvB[i] = 0;
+    }
+    for(int i = 0; i < inaltime_img; i++)
+    {
+        for(int j = 0; j < latime_img; j++) /// Scriu pixel cu pixel
+        {
+            fvR[(data[k++])]++;
+            fvG[(data[k++])]++;
+            fvB[(data[k++])]++;
+        }
+        k+=latime_img%4;
+    }
+
+    for(int i=0;i<=256;i++)
+    {
+        pR += ((fvR[i]-f_sub)*(fvR[i]-f_sub))/f_sub;
+        pG +=  ((fvG[i]-f_sub)*(fvG[i]-f_sub))/f_sub;
+        pB += ((fvB[i]-f_sub)*(fvB[i]-f_sub))/f_sub;
+    }
+
+
+}
 
 int main()
 {
@@ -367,6 +409,10 @@ int main()
 
     /// Decriptare
     decrypt_image(nume_img_criptata,nume_img_decriptata);
+
+    /// Chi test
+    chi_test(nume_img_sursa);
+    chi_test(nume_img_criptata);
 
     return 0;
 }
