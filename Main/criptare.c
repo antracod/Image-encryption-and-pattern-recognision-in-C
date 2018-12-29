@@ -183,7 +183,6 @@ void xor_substitution(unsigned char *data,unsigned long sv,unsigned latime_img,u
     unsigned int bit2 = (sv >> (8*1)) & 0xff;
     unsigned int bit3 = (sv >> (8*2)) & 0xff;
 
-
     printf("%lu %lu %lu",bit1,bit2,bit3);
     data[54]=bit1^data[54];
     data[55]=bit2^data[55];
@@ -222,50 +221,71 @@ void xor_substitution(unsigned char *data,unsigned long sv,unsigned latime_img,u
     }
 }
 
-void decrypt_image(char *nume_img_sursa,char *nume_img_decrypted)
+unsigned char *xor_substitution2(unsigned char *data,unsigned long sv,unsigned latime_img,unsigned long *rnd)
 {
-     unsigned char *header;
-    header = getheader(nume_img_sursa);
-    int latime_img = *(int*)&header[18];
-    int inaltime_img = *(int*)&header[22];
-    int area = latime_img*inaltime_img;
+    unsigned char *data2;
+    data2 =  malloc(sizeof(unsigned char)*latime_img*latime_img*3+100);
 
-    unsigned char *data;
-    unsigned long int *rnd;
-    unsigned long int *perm;
+    for(int i=0;i<54;i++)
+        data2[i]=data[i];
 
-    data =  malloc(sizeof(unsigned char)*inaltime_img*latime_img*3+100);
-    rnd = malloc(sizeof(unsigned long int)*inaltime_img*latime_img*2+2);
-    perm = malloc(sizeof(unsigned long int)*inaltime_img*latime_img*2+2);
-    perm_inv = malloc(sizeof(unsigned long int)*inaltime_img*latime_img*2+2);
-    ReadBMP(nume_img_sursa,data);
+    unsigned int bit1 = (sv >> (8*0)) & 0xff;
+    unsigned int bit2 = (sv >> (8*1)) & 0xff;
+    unsigned int bit3 = (sv >> (8*2)) & 0xff;
 
-    reverse_array(data,header);
+    printf("%lu %lu %lu",bit1,bit2,bit3);
+    data2[54]=bit1^data[54];
+    data2[55]=bit2^data[55];
+    data2[56]=bit3^data[56];
 
-    genrnd_array(rnd,inaltime_img*latime_img*2,123456789);
+    bit1 = (rnd[latime_img*latime_img] >> (8*0)) & 0xff;
+    bit2 = (rnd[latime_img*latime_img] >> (8*1)) & 0xff;
+    bit3 = (rnd[latime_img*latime_img] >> (8*2)) & 0xff;
 
-    genperm_array(perm,rnd,inaltime_img*latime_img);
+    data2[54]=data2[54]^bit1;
+    data2[55]=data2[55]^bit2;
+    data2[56]=data2[56]^bit3;
 
-    geninvperm_array(perm);
-   // data = apply_perm(data,perm,inaltime_img*latime_img,latime_img);
+    for(int i=2; i<=latime_img*latime_img; i++)
+    {
+        unsigned nr_pixel=(i-1)*3+((i-1)/latime_img)*(latime_img%4)+54;
+        unsigned qpadding;
+        if((i-1)%latime_img!=0)
+            qpadding=0;
+        else
+            qpadding=latime_img%4;
 
-   // xor_substitution(data,987654321,latime_img,rnd);
+        data2[nr_pixel]=data[nr_pixel-3-qpadding]^data[nr_pixel];
+        data2[nr_pixel+1]=data[nr_pixel-2-qpadding]^data[nr_pixel+1];
+        data2[nr_pixel+2]=data[nr_pixel-1-qpadding]^data[nr_pixel+2];
 
-   // reverse_array(data,header);
 
-    WriteBMP(nume_img_decrypted,data);
+        bit1 = (rnd[latime_img*latime_img+i-1] >> (8*0)) & 0xff;
+        bit2 = (rnd[latime_img*latime_img+i-1] >> (8*1)) & 0xff;
+        bit3 = (rnd[latime_img*latime_img+i-1] >> (8*2)) & 0xff;
 
+        data2[nr_pixel]=data2[nr_pixel]^bit1;
+        data2[nr_pixel+1]=data2[nr_pixel+1]^bit2;
+        data2[nr_pixel+2]=data2[nr_pixel+2]^bit3;
+    }
+    return data2;
 }
 
-int main()
+void geninvperm_array(unsigned long *perm,unsigned long *invperm,int n)
 {
-    char nume_img_sursa[] = "peppers.bmp";
-    char nume_img_criptata[] = "peppers_criptata.bmp";
-    char nume_img_decriptata[] = "peppers_decrypted.bmp";
 
 
-    /// Criptare
+    for(int i=0; i<n; i++)
+    {
+        invperm[perm[i]]=i;
+        if(i<10)
+        printf("%ul %ul \n",perm[i],i);
+    }
+}
 
+
+void encrypt_image(char *nume_img_sursa,char *nume_img_criptata)
+{
     unsigned char *header;
     header = getheader(nume_img_sursa);
     int latime_img = *(int*)&header[18];
@@ -296,12 +316,57 @@ int main()
 
     WriteBMP(nume_img_criptata,data);
 
+}
+void decrypt_image(char *nume_img_sursa,char *nume_img_decrypted)
+{
+    unsigned char *header;
+    header = getheader(nume_img_sursa);
+    int latime_img = *(int*)&header[18];
+    int inaltime_img = *(int*)&header[22];
+    int area = latime_img*inaltime_img;
+
+    unsigned char *data;
+    unsigned long int *rnd;
+    unsigned long int *perm;
+    unsigned long int *perm_inv;
+
+    data =  malloc(sizeof(unsigned char)*inaltime_img*latime_img*3+100);
+    rnd = malloc(sizeof(unsigned long int)*inaltime_img*latime_img*2+2);
+    perm = malloc(sizeof(unsigned long int)*inaltime_img*latime_img*2+2);
+    perm_inv = malloc(sizeof(unsigned long int)*inaltime_img*latime_img*2+2);
+    ReadBMP(nume_img_sursa,data);
+
+    reverse_array(data,header);
+
+    genrnd_array(rnd,inaltime_img*latime_img*2,123456789);
+
+    genperm_array(perm,rnd,inaltime_img*latime_img);
+
+    geninvperm_array(perm,perm_inv,inaltime_img*latime_img);
+
+    data = xor_substitution2(data,987654321,latime_img,rnd);
+
+    data = apply_perm(data,perm_inv,inaltime_img*latime_img,latime_img);
+
+    reverse_array(data,header);
+
+    WriteBMP(nume_img_decrypted,data);
+
+}
+
+
+
+int main()
+{
+    char nume_img_sursa[] = "peppers.bmp";
+    char nume_img_criptata[] = "peppers_criptata.bmp";
+    char nume_img_decriptata[] = "peppers_decrypted.bmp";
+
+    /// Criptare
+    encrypt_image(nume_img_sursa,nume_img_criptata);
+
     /// Decriptare
-
     decrypt_image(nume_img_criptata,nume_img_decriptata);
-
-
-
 
     return 0;
 }
