@@ -128,10 +128,6 @@ void genperm_array(unsigned long *perm,unsigned long *rng,int n)
         perm[k] = perm[local_rng];
         perm[local_rng] = temp;
     }
-    for(k=0; k<=n; k++)
-    {
-        //  printf("%lu e schimbat cu %lu \n",k,perm[k]);
-    }
 }
 
 void switch_pixels(unsigned char *data,unsigned x,unsigned y,unsigned latime_img,unsigned padding)
@@ -183,7 +179,6 @@ void xor_substitution(unsigned char *data,unsigned long sv,unsigned latime_img,u
     unsigned int bit2 = (sv >> (8*1)) & 0xff;
     unsigned int bit3 = (sv >> (8*2)) & 0xff;
 
-    printf("%lu %lu %lu",bit1,bit2,bit3);
     data[54]=bit1^data[54];
     data[55]=bit2^data[55];
     data[56]=bit3^data[56];
@@ -226,14 +221,13 @@ unsigned char *xor_substitution2(unsigned char *data,unsigned long sv,unsigned l
     unsigned char *data2;
     data2 =  malloc(sizeof(unsigned char)*latime_img*latime_img*3+100);
 
-    for(int i=0;i<54;i++)
+    for(int i=0; i<54; i++)
         data2[i]=data[i];
 
     unsigned int bit1 = (sv >> (8*0)) & 0xff;
     unsigned int bit2 = (sv >> (8*1)) & 0xff;
     unsigned int bit3 = (sv >> (8*2)) & 0xff;
 
-    printf("%lu %lu %lu",bit1,bit2,bit3);
     data2[54]=bit1^data[54];
     data2[55]=bit2^data[55];
     data2[56]=bit3^data[56];
@@ -278,8 +272,6 @@ void geninvperm_array(unsigned long *perm,unsigned long *invperm,int n)
     for(int i=0; i<n; i++)
     {
         invperm[perm[i]]=i;
-        if(i<10)
-        printf("%ul %ul \n",perm[i],i);
     }
 }
 
@@ -354,7 +346,6 @@ void decrypt_image(char *nume_img_sursa,char *nume_img_decrypted)
 
 }
 
-
 void chi_test(char *nume_img_sursa)
 {
     unsigned char *header;
@@ -373,28 +364,29 @@ void chi_test(char *nume_img_sursa)
     double f_sub = (latime_img*inaltime_img)/256;
 
 
-    for(int i=0;i<=256;i++)
+    for(int i=0; i<=256; i++)
     {
         fvR[i] = fvG[i] = fvB[i] = 0;
     }
+
     for(int i = 0; i < inaltime_img; i++)
     {
-        for(int j = 0; j < latime_img; j++) /// Scriu pixel cu pixel
+        for(int j = 0; j < latime_img; j++)
         {
-            fvR[(data[k++])]++;
-            fvG[(data[k++])]++;
-            fvB[(data[k++])]++;
+            fvR[(int)(data[k++])]++;
+            fvG[(int)(data[k++])]++;
+            fvB[(int)(data[k++])]++;
         }
         k+=latime_img%4;
     }
 
-    for(int i=0;i<=256;i++)
+    for(int i=0; i<=255; i++)
     {
         pR += ((fvR[i]-f_sub)*(fvR[i]-f_sub))/f_sub;
         pG +=  ((fvG[i]-f_sub)*(fvG[i]-f_sub))/f_sub;
         pB += ((fvB[i]-f_sub)*(fvB[i]-f_sub))/f_sub;
     }
-
+    printf("R: %f G: %f B: %f \n",pB,pG,pR);
 
 }
 
