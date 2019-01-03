@@ -390,6 +390,23 @@ void chi_test(char *nume_img_sursa)
 
 }
 
+unsigned char *grayscale_convert(unsigned char *data)
+{
+
+}
+
+{
+
+}
+
+typedef struct
+{
+    double correlation;
+    int start_i,start_j,end_i,end_j;
+    int digit;
+}
+
+
 int main()
 {
     char nume_img_sursa[] = "peppers.bmp";
@@ -405,6 +422,10 @@ int main()
     /// Chi test
     chi_test(nume_img_sursa);
     chi_test(nume_img_criptata);
+
+    /// Pattern Matching
+
+
 
     return 0;
 }
