@@ -1,5 +1,16 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
+
+/// Structuri
+
+typedef struct
+{
+    double correlation;
+    int start_i,start_j,stop_i,stop_j,digit;
+} digit_template;
+
+/// Functii
 
 unsigned long int xorshift32(unsigned long int seed)
 {
@@ -390,21 +401,51 @@ void chi_test(char *nume_img_sursa)
 
 }
 
+
+
+/// For template matching
+
+
 unsigned char *grayscale_convert(unsigned char *data)
 {
+    int latime_img = *(int*)&data[18];
+    int inaltime_img = *(int*)&data[22];
+    int padding;
+    unsigned char pRGB[4];
 
+    if(latime_img % 4 != 0) /// Aflu padding-ul
+        padding = 4 - (3 * latime_img) % 4;
+    else
+        padding = 0;
+
+    int k=54;
+
+    for(int i = 0; i < inaltime_img; i++)
+    {
+        for(int j = 0; j < latime_img; j++) /// Scriu pixel cu pixel
+        {
+
+            pRGB[0] = data[k++];
+            pRGB[1] = data[k++];
+            pRGB[2] = data[k++];
+            data[k-1] = data[k-2] = data[k-3] = 0.299*pRGB[0] + 0.587*pRGB[1] + 0.114*pRGB[2];
+        }
+        k+=padding;
+    }
+    return data;
 }
 
+
+void  template_matching()
 {
 
 }
 
-typedef struct
+void elim_nonmax()
 {
-    double correlation;
-    int start_i,start_j,end_i,end_j;
-    int digit;
+
 }
+
 
 
 int main()
@@ -412,6 +453,9 @@ int main()
     char nume_img_sursa[] = "peppers.bmp";
     char nume_img_criptata[] = "peppers_criptata.bmp";
     char nume_img_decriptata[] = "peppers_decrypted.bmp";
+    char nume_img_test[] = "test.bmp";
+    char nume_img_test_grayscale[] = "testgray.bmp";
+    char nume_img_matched[] = "matched.bmp";
 
     /// Criptare
     encrypt_image(nume_img_sursa,nume_img_criptata);
@@ -424,8 +468,10 @@ int main()
     chi_test(nume_img_criptata);
 
     /// Pattern Matching
+    template_matching();
 
-
+    /// Eliminare non maxime
+    elim_nonmax();
 
     return 0;
 }
