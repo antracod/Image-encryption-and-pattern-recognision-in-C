@@ -1,2 +1,2 @@
-# Proiect_PP
-# Proiect realizat de Radu Teodor-George , Grupa 142. 
+# Procedural programming project
+# Image encryption and pattern recognision in C
